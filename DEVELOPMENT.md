@@ -16,6 +16,14 @@ You must install these tools:
 
 Use `dep` to update dependencies:
 
-``bash
+```bash
 dep ensure
+```
+
+## Updating code generation
+
+To update the generated `client-go` libs:
+
+```bash
+./hack/update-codegen.sh
 ```
