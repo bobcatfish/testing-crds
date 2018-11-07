@@ -19,6 +19,9 @@ are tested via unit, integration and system tests.
 
 ### Description
 
+The Cat controller watches for `Cat` resources to be created. When they are, it creates a `Deployment` of an
+nginx service with the same name as the `Cat`.
+
 ### Deploying
 
 The controllers can be built and deployed with [`ko`](https://github.com/google/go-containerregistry/tree/master/cmd/ko),
@@ -27,7 +30,7 @@ a docker registry you can push to (i.e. one you've logged into using [`docker lo
 or via [`gcloud`](https://cloud.google.com/container-registry/docs/advanced-authentication)):
 
 ```bash
-ko apply -f config/controller.yaml
+ko apply -f config/
 ```
 
 You can remove it with:
@@ -36,7 +39,32 @@ You can remove it with:
 ko delete -f config/
 ```
 
+#### Running locally
+
+You can run the controller locally by building it with go and running the binary directly:
+
+```bash
+# Add the CRD def'n to your k8s cluster
+kubectl apply -f config/300-cat.yaml
+
+# Build the controller and run it locally
+go build -o cat-controller ./cmd/controller
+./cat-controller -kubeconfig=$HOME/.kube/config
+
+# Deploy the example Cat instance
+kubectl apply -f example.yaml
+
+# Look at the created resources
+kubectl get cats
+kubectl get deployments
+```
+
 ## Poorly factored controller
+
+TODO: will create two runnable controllers, each of which uses differently factored controller logic.
+One could run integration tests against either.
+
+Current controller is looking very much like it could be the "poorly factored" version :D.
 
 ## Well factored controller
 
@@ -58,8 +86,6 @@ You can override the kubeconfig and context if you'd like:
 ```bash
 go test -v -tags=system -count=1 ./test --kubeconfig ~/special/kubeconfig --cluster myspecialcluster
 ```
-
-TODO: why is there an error from my editor when all files in `test/` have the build constraint?
 
 ### Unit tests
 

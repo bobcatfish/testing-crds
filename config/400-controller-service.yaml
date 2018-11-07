@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: cat-controller
+  name: cat-controller
+  namespace: cattopia
+spec:
+  ports:
+  - name: endpoint
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: cat-controller

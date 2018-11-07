@@ -34,6 +34,14 @@ required = [
 #   unused-packages = true
 
 [[constraint]]
+  name = "k8s.io/api"
+  version = "kubernetes-1.11.3"
+
+[[constraint]]
+  name = "k8s.io/apimachinery"
+  version = "kubernetes-1.11.3"
+
+[[constraint]]
   name = "k8s.io/code-generator"
   version = "kubernetes-1.11.3"
 

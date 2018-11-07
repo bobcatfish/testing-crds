@@ -1,0 +1,8 @@
+apiVersion: cat.bobcatfish.com/v1alpha1
+kind: Cat
+metadata:
+  name: example-cat
+spec:
+  name: freckles
+  phrase: "meow, see"
+  breed: moggie
