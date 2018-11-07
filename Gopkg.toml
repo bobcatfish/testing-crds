@@ -3,7 +3,16 @@
 # Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
 # for detailed Gopkg.toml documentation.
 #
-# required = ["github.com/user/thing/cmd/thing"]
+
+required = [
+  # Required for generation of client-go libs
+  "k8s.io/code-generator/cmd/deepcopy-gen",
+  "k8s.io/code-generator/cmd/defaulter-gen",
+  "k8s.io/code-generator/cmd/client-gen",
+  "k8s.io/code-generator/cmd/lister-gen",
+  "k8s.io/code-generator/cmd/informer-gen",
+]
+
 # ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
 #
 # [[constraint]]
@@ -24,11 +33,18 @@
 #   go-tests = true
 #   unused-packages = true
 
+[[constraint]]
+  name = "k8s.io/code-generator"
+  version = "kubernetes-1.11.3"
 
 [[constraint]]
   name = "k8s.io/client-go"
-  version = "9.0.0"
+  version = "kubernetes-1.11.3"
 
 [prune]
   go-tests = true
   unused-packages = true
+
+[[prune.project]]
+  name = "k8s.io/code-generator"
+  unused-packages = false
