@@ -8,9 +8,7 @@ import (
 	"github.com/golang/glog"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
 	appsinformers "k8s.io/client-go/informers/apps/v1"
@@ -27,6 +25,8 @@ import (
 	samplescheme "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned/scheme"
 	informers "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions/cat/v1alpha1"
 	listers "github.com/bobcatfish/testing-crds/pkg/client/listers/cat/v1alpha1"
+	"github.com/bobcatfish/testing-crds/pkg/controller/factored/cats"
+	"github.com/bobcatfish/testing-crds/pkg/controller/factored/deployment"
 )
 
 const controllerAgentName = "cat-controller"
@@ -38,9 +38,10 @@ const (
 	// to sync due to a Deployment of the same name already existing.
 	ErrResourceExists = "ErrResourceExists"
 
-	// MessageResourceExists is the message used for Events when a resource
-	// fails to sync due to a Deployment already existing
-	MessageResourceExists = "Resource %q already exists and is not managed by Cat"
+	// MessageResourceInvalid is the message used for Events when a resource
+	// fails to sync due to a Deployment already existing in an unexpected state
+	MessageResourceInvalid = "Resource %q already exists and is invalid"
+
 	// MessageResourceSynced is the message used for an Event fired when a Cat
 	// is synced successfully
 	MessageResourceSynced = "Cat synced successfully"
@@ -216,72 +217,95 @@ func (c *Controller) processNextWorkItem() bool {
 	return true
 }
 
+type reconcileErr struct {
+	err       error
+	keepGoing bool
+}
+
+func getCat(name string, g cats.GetCat) (*v1alpha1.Cat, reconcileErr) {
+	cat, keepGoing, err := cats.Find(name, g)
+	if err != nil && !keepGoing {
+		runtime.HandleError(fmt.Errorf("cat %q will no longer be processed: %s", name, err))
+		return nil, reconcileErr{
+			err:       err,
+			keepGoing: false,
+		}
+	} else if err != nil {
+		runtime.HandleError(fmt.Errorf("error getting cat %q: %s", name, err))
+		return nil, reconcileErr{
+			err:       err,
+			keepGoing: true,
+		}
+	}
+	if err := cats.IsValid(cat); err != nil {
+		runtime.HandleError(fmt.Errorf("cat %q is invalid: %s", name, err))
+		return nil, reconcileErr{
+			err:       err,
+			keepGoing: true,
+		}
+	}
+	return cat, reconcileErr{}
+}
+
+func getDeploymentToCreate(c *v1alpha1.Cat, g deployment.GetDeployment) (*appsv1.Deployment, reconcileErr) {
+	d, err := deployment.Get(c.Name, g)
+	if err != nil {
+		return nil, reconcileErr{
+			err:       fmt.Errorf("error getting corresponding Deployment %q: %s", c.Name, err),
+			keepGoing: true,
+		}
+	}
+	if d != nil {
+		if err = deployment.IsValid(d, c); err != nil {
+			return nil, reconcileErr{
+				err: fmt.Errorf("corresponding deployment %q is invalid: %s", d.Name, err),
+				// TODO: not sure why we want to continue reconciling in this case
+				keepGoing: true,
+			}
+		}
+		return nil, reconcileErr{}
+	}
+	d = deployment.NewDeployment(c.Namespace, c.Name)
+	deployment.AddOwnerRef(d, c)
+	return d, reconcileErr{}
+}
+
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the Cat resource
 // with the current status of the resource.
 func (c *Controller) syncHandler(key string) error {
-	// Convert the namespace/name string into a distinct namespace and name
 	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("invalid resource key: %s", key))
 		return nil
 	}
 
-	// Get the Cat resource with this namespace/name
-	cat, err := c.catsLister.Cats(namespace).Get(name)
-	if err != nil {
-		// The Cat resource may no longer exist, in which case we stop
-		// processing.
-		if errors.IsNotFound(err) {
-			runtime.HandleError(fmt.Errorf("cat '%s' in work queue no longer exists", key))
+	cat, e := getCat(name, c.catsLister.Cats(namespace).Get)
+	if e.err != nil {
+		if !e.keepGoing {
+			runtime.HandleError(fmt.Errorf("cat %q will no longer be processed: %s", key, err))
 			return nil
 		}
-
-		return err
+		runtime.HandleError(fmt.Errorf("error getting cat %q: %s", key, err))
+		return e.err
 	}
 
-	// We will create a Deployment with the same name as the cat
-	deploymentName := cat.Spec.Name
-	if deploymentName == "" {
-		// We choose to absorb the error here as the worker would requeue the
-		// resource otherwise. Instead, the next time the resource is updated
-		// the resource will be queued again.
-		runtime.HandleError(fmt.Errorf("%s: deployment name must be specified", key))
-		return nil
+	d, e := getDeploymentToCreate(cat, c.deploymentsLister.Deployments(cat.Namespace).Get)
+	if e.err != nil {
+		if !e.keepGoing {
+			c.recorder.Event(cat, corev1.EventTypeWarning, ErrResourceExists, err.Error())
+			return nil
+		}
+		return fmt.Errorf("error getting corresponding Deployment for cat %q: %s", cat.Name, err)
+	}
+	if d != nil {
+		_, err = c.kubeclientset.AppsV1().Deployments(cat.Namespace).Create(d)
+		if err != nil {
+			return fmt.Errorf("couldn't create deployment %q for cat %q, requeuing: %s", d.Name, cat.Name, err)
+		}
 	}
 
-	// Get the deployment with the name specified in Cat.spec
-	deployment, err := c.deploymentsLister.Deployments(cat.Namespace).Get(deploymentName)
-	// If the resource doesn't exist, we'll create it
-	if errors.IsNotFound(err) {
-		deployment, err = c.kubeclientset.AppsV1().Deployments(cat.Namespace).Create(newDeployment(cat))
-	}
-
-	// If an error occurs during Get/Create, we'll requeue the item so we can
-	// attempt processing again later. This could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
-
-	// If the Deployment is not controlled by this Cat resource, we should log
-	// a warning to the event recorder and ret
-	if !metav1.IsControlledBy(deployment, cat) {
-		msg := fmt.Sprintf(MessageResourceExists, deployment.Name)
-		c.recorder.Event(cat, corev1.EventTypeWarning, ErrResourceExists, msg)
-		return fmt.Errorf(msg)
-	}
-
-	// If an error occurs during Update, we'll requeue the item so we can
-	// attempt processing again later. THis could have been caused by a
-	// temporary network failure, or any other transient reason.
-	if err != nil {
-		return err
-	}
-
-	// Finally, we update the status block of the Cat resource to reflect the
-	// current state of the world
-	err = c.updateCatStatus(cat, deployment)
+	err = c.updateCatStatus(cat, d)
 	if err != nil {
 		return err
 	}
@@ -356,45 +380,5 @@ func (c *Controller) handleObject(obj interface{}) {
 
 		c.enqueueCat(cat)
 		return
-	}
-}
-
-// newDeployment creates a new Deployment for a Cat resource. It also sets
-// the appropriate OwnerReferences on the resource so handleObject can discover
-// the Cat resource that 'owns' it.
-func newDeployment(cat *v1alpha1.Cat) *appsv1.Deployment {
-	labels := map[string]string{
-		"app": "nginx",
-	}
-	return &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      cat.Spec.Name,
-			Namespace: cat.Namespace,
-			OwnerReferences: []metav1.OwnerReference{
-				*metav1.NewControllerRef(cat, schema.GroupVersionKind{
-					Group:   v1alpha1.SchemeGroupVersion.Group,
-					Version: v1alpha1.SchemeGroupVersion.Version,
-					Kind:    "Cat",
-				}),
-			},
-		},
-		Spec: appsv1.DeploymentSpec{
-			Selector: &metav1.LabelSelector{
-				MatchLabels: labels,
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "nginx",
-							Image: "nginx:latest",
-						},
-					},
-				},
-			},
-		},
 	}
 }
