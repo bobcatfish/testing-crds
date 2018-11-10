@@ -1,4 +1,4 @@
-package controller
+package coupled
 
 import (
 	"fmt"
@@ -364,8 +364,7 @@ func (c *Controller) handleObject(obj interface{}) {
 // the Cat resource that 'owns' it.
 func newDeployment(cat *v1alpha1.Cat) *appsv1.Deployment {
 	labels := map[string]string{
-		"app":        "nginx",
-		"controller": cat.Name,
+		"app": "nginx",
 	}
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

@@ -11,7 +11,7 @@ import (
 
 	clientset "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned"
 	informers "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions"
-	"github.com/bobcatfish/testing-crds/pkg/controller"
+	"github.com/bobcatfish/testing-crds/pkg/controller/coupled"
 	"github.com/bobcatfish/testing-crds/pkg/signals"
 
 	// Mysteriously by k8s libs, or they fail to create `KubeClient`s from config. Apparently just importing it is enough. @_@ side effects @_@. https://github.com/kubernetes/client-go/issues/242
@@ -47,7 +47,7 @@ func main() {
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	catInformerFactory := informers.NewSharedInformerFactory(exampleClient, time.Second*30)
 
-	controller := controller.NewController(kubeClient, exampleClient,
+	controller := coupled.NewController(kubeClient, exampleClient,
 		kubeInformerFactory.Apps().V1().Deployments(),
 		catInformerFactory.Cat().V1alpha1().Cats())
 

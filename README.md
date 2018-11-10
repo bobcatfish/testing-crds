@@ -7,22 +7,60 @@ The repo contains examples of well factored and poorly factored controllers. The
 are tested via unit, integration and system tests.
 
 * [Example controller description](#description)
+* [Tightly coupled controller](#coupled-controller)
+* [Well factored controller](#factored-controller)
 * [Deploying example controllers](#deploying)
-* [Poorly factored controller](#poorly-factored-controller)
-* [Well factored controller](#well-factored-controller)
 * [System tests](#system-tests)
-* [Unit tests](#unit-tests)
-* [Glue tests](#glue-tests)
 * [Kubebuilder based controller](#kubebuilder-controller)
 
-## Example controller
+## Example controllers
+
+This repo contains 2 implementations of [the cat controller](#description).
+
+The functionality is the same, the cod is organized differently in:
+
+* [The tightly coupled controller](#coupled-controller)
+* [THe well factored controller](#factored-controller)
 
 ### Description
 
 The Cat controller watches for `Cat` resources to be created. When they are, it creates a `Deployment` of an
 nginx service with the same name as the `Cat`.
 
+#### Coupled controller
+
+The coupled controller lives in:
+
+* [cmd/coupled-controller](cmd/coupled-controller)
+* [pkg/controller/coupled](pkg/controller/coupled)
+
+In this controller, all of the business logic is implemented directly in the controller's `syncHandler`.
+
+##### Tests
+
+TODO: add and describe unit (glue) tests
+
+#### Factored controller
+
+The well factored controller lives in:
+
+* [cmd/factored-controller](cmd/factored-controller)
+* [pkg/controller/factored](pkg/controller/factored)
+
+This controller is a refactored verwsion of [the coupled controller](#coupled-controller). 
+In this controller, the business logic has been moved into packages outside the controller
+itself, and the functions in the [todo](TODO) package are implemented loosely as a
+[functional core](https://www.destroyallsoftware.com/screencasts/catalog/functional-core-imperative-shell).
+
+TODO: refactor more so that the duplicated code is minimal?
+
+##### Tests
+
+TODO: add and describe unit tests
+
 ### Deploying
+
+TODO: how to switch b/w the two implementations with `ko`?
 
 The controllers can be built and deployed with [`ko`](https://github.com/google/go-containerregistry/tree/master/cmd/ko),
 which requires the environment variable `KO_DOCKER_REGISTRY` to be set to
@@ -41,14 +79,18 @@ ko delete -f config/
 
 #### Running locally
 
-You can run the controller locally by building it with go and running the binary directly:
+You can run the controllers locally by building it with go and running the binary directly:
 
 ```bash
 # Add the CRD def'n to your k8s cluster
 kubectl apply -f config/300-cat.yaml
 
-# Build the controller and run it locally
-go build -o cat-controller ./cmd/controller
+# Build one of the controllers and run it locally
+go build -o cat-controller ./cmd/coupled-controller
+# or 
+go build -o cat-controller ./cmd/factored-controller
+
+# Run the built controller
 ./cat-controller -kubeconfig=$HOME/.kube/config
 
 # Deploy the example Cat instance
@@ -59,18 +101,7 @@ kubectl get cats
 kubectl get deployments
 ```
 
-## Poorly factored controller
-
-TODO: will create two runnable controllers, each of which uses differently factored controller logic.
-One could run integration tests against either.
-
-Current controller is looking very much like it could be the "poorly factored" version :D.
-
-## Well factored controller
-
-## Tests
-
-### System tests
+## System tests
 
 After you have [deployed the controller](#deploying), you can run the integration tests against
 [the `current-context` cluster in your kube config](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/):
@@ -86,10 +117,6 @@ You can override the kubeconfig and context if you'd like:
 ```bash
 go test -v -tags=system -count=1 ./test --kubeconfig ~/special/kubeconfig --cluster myspecialcluster
 ```
-
-### Unit tests
-
-### Glue tests
 
 ## Kubebuilder based controller
 
