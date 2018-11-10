@@ -217,59 +217,6 @@ func (c *Controller) processNextWorkItem() bool {
 	return true
 }
 
-type reconcileErr struct {
-	err       error
-	keepGoing bool
-}
-
-func getCat(name string, g cats.GetCat) (*v1alpha1.Cat, reconcileErr) {
-	cat, keepGoing, err := cats.Find(name, g)
-	if err != nil && !keepGoing {
-		runtime.HandleError(fmt.Errorf("cat %q will no longer be processed: %s", name, err))
-		return nil, reconcileErr{
-			err:       err,
-			keepGoing: false,
-		}
-	} else if err != nil {
-		runtime.HandleError(fmt.Errorf("error getting cat %q: %s", name, err))
-		return nil, reconcileErr{
-			err:       err,
-			keepGoing: true,
-		}
-	}
-	if err := cats.IsValid(cat); err != nil {
-		runtime.HandleError(fmt.Errorf("cat %q is invalid: %s", name, err))
-		return nil, reconcileErr{
-			err:       err,
-			keepGoing: true,
-		}
-	}
-	return cat, reconcileErr{}
-}
-
-func getDeploymentToCreate(c *v1alpha1.Cat, g deployment.GetDeployment) (*appsv1.Deployment, reconcileErr) {
-	d, err := deployment.Get(c.Name, g)
-	if err != nil {
-		return nil, reconcileErr{
-			err:       fmt.Errorf("error getting corresponding Deployment %q: %s", c.Name, err),
-			keepGoing: true,
-		}
-	}
-	if d != nil {
-		if err = deployment.IsValid(d, c); err != nil {
-			return nil, reconcileErr{
-				err: fmt.Errorf("corresponding deployment %q is invalid: %s", d.Name, err),
-				// TODO: not sure why we want to continue reconciling in this case
-				keepGoing: true,
-			}
-		}
-		return nil, reconcileErr{}
-	}
-	d = deployment.NewDeployment(c.Namespace, c.Name)
-	deployment.AddOwnerRef(d, c)
-	return d, reconcileErr{}
-}
-
 // syncHandler compares the actual state with the desired, and attempts to
 // converge the two. It then updates the Status block of the Cat resource
 // with the current status of the resource.
@@ -280,25 +227,36 @@ func (c *Controller) syncHandler(key string) error {
 		return nil
 	}
 
-	cat, e := getCat(name, c.catsLister.Cats(namespace).Get)
-	if e.err != nil {
-		if !e.keepGoing {
-			runtime.HandleError(fmt.Errorf("cat %q will no longer be processed: %s", key, err))
-			return nil
-		}
-		runtime.HandleError(fmt.Errorf("error getting cat %q: %s", key, err))
-		return e.err
+	// Retrieve the cat object
+	cat, keepGoing, err := cats.Find(name, c.catsLister.Cats(namespace).Get)
+	if err != nil && !keepGoing {
+		runtime.HandleError(fmt.Errorf("cat %q will no longer be processed: %s", name, err))
+		return nil
+	} else if err != nil {
+		runtime.HandleError(fmt.Errorf("error getting cat %q: %s", name, err))
+		return err
+	}
+	if err := cats.IsValid(cat); err != nil {
+		runtime.HandleError(fmt.Errorf("cat %q is invalid: %s", name, err))
+		return err
 	}
 
-	d, e := getDeploymentToCreate(cat, c.deploymentsLister.Deployments(cat.Namespace).Get)
-	if e.err != nil {
-		if !e.keepGoing {
-			c.recorder.Event(cat, corev1.EventTypeWarning, ErrResourceExists, err.Error())
-			return nil
-		}
-		return fmt.Errorf("error getting corresponding Deployment for cat %q: %s", cat.Name, err)
+	// Determine if we should create a corresponding Deployment
+	d, err := deployment.Get(cat.Name, c.deploymentsLister.Deployments(cat.Namespace).Get)
+	if err != nil {
+		runtime.HandleError(fmt.Errorf("error getting corresponding Deployment %q: %s", cat.Name, err))
+		return err
 	}
 	if d != nil {
+		if err = deployment.IsValid(d, cat); err != nil {
+			msg := fmt.Sprintf("corresponding deployment %q is invalid: %s", d.Name, err)
+			c.recorder.Event(cat, corev1.EventTypeWarning, ErrResourceExists, msg)
+			return fmt.Errorf(msg)
+		}
+	} else {
+		// Create the Deployment since it doesn't exist
+		d = deployment.NewDeployment(cat.Namespace, cat.Name)
+		deployment.AddOwnerRef(d, cat)
 		_, err = c.kubeclientset.AppsV1().Deployments(cat.Namespace).Create(d)
 		if err != nil {
 			return fmt.Errorf("couldn't create deployment %q for cat %q, requeuing: %s", d.Name, cat.Name, err)
