@@ -1,4 +1,4 @@
-package coupled
+package factored
 
 import (
 	"fmt"
