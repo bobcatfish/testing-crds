@@ -1,0 +1,3 @@
+version: "1"
+domain: bobcatfish.com
+repo: github.com/bobcatfish/testing-crds/kubebuilder

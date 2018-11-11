@@ -1,0 +1,9 @@
+apiVersion: cat.bobcatfish.com/v1alpha1
+kind: Feline
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: feline-sample
+spec:
+  # Add fields here
+  foo: bar
