@@ -17,6 +17,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
+	"github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned"
+	"github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned/typed/cat/v1alpha1"
+
 	// Mysteriously by k8s libs, or they fail to create `KubeClient`s from config. Apparently just importing it is enough. @_@ side effects @_@. https://github.com/kubernetes/client-go/issues/242
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )
@@ -56,34 +59,27 @@ func cleanupOnInterrupt(cleanup func()) {
 	}()
 }
 
-func newClients(kubeConfigPath, clusterName string) (*kubernetes.Clientset, error) {
+func setup(t *testing.T) (*kubernetes.Clientset, v1alpha1.CatInterface, string) {
 	overrides := clientcmd.ConfigOverrides{}
-	if clusterName != "" {
-		overrides.Context.Cluster = clusterName
+	if flags.Cluster != "" {
+		overrides.Context.Cluster = flags.Cluster
 	}
+
+	// Create kube client
 	cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
-		&clientcmd.ClientConfigLoadingRules{ExplicitPath: kubeConfigPath},
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: flags.Kubeconfig},
 		&overrides).ClientConfig()
 	if err != nil {
-		return nil, fmt.Errorf("error creating config from file %q with cluster override %q: %s", kubeConfigPath, clusterName, err)
+		t.Fatalf("Error creating config from file %q with cluster override %q: %s", flags.Kubeconfig, flags.Cluster, err)
 	}
 	k, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("error creating kube client object from file %q with cluster override %q: %s", kubeConfigPath, clusterName, err)
+		t.Fatalf("Error creating kube client object from file %q with cluster override %q: %s", flags.Kubeconfig, flags.Cluster, err)
 	}
-	return k, nil
-}
 
-func setup(t *testing.T) (*kubernetes.Clientset, string) {
+	// Create a namespace for this test
 	namespace := appendRandomString("cattopia")
-
-	c, err := newClients(flags.Kubeconfig, flags.Cluster)
-	if err != nil {
-		t.Fatalf("Failed to create clients: %s", err)
-	}
-
-	log.Printf("Creating namespace %s\n", namespace)
-	if _, err := c.CoreV1().Namespaces().Create(&corev1.Namespace{
+	if _, err := k.CoreV1().Namespaces().Create(&corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: namespace,
 		},
@@ -91,7 +87,14 @@ func setup(t *testing.T) (*kubernetes.Clientset, string) {
 		t.Fatalf("Failed to create namespace %s for tests: %s", namespace, err)
 	}
 
-	return c, namespace
+	// Create cat CRD client
+	cs, err := versioned.NewForConfig(cfg)
+	if err != nil {
+		t.Fatalf("couldn't create cat clientset: %s", err)
+	}
+	c := cs.CatV1alpha1().Cats(namespace)
+
+	return k, c, namespace
 }
 
 func tearDown(t *testing.T, c *kubernetes.Clientset, namespace string) {
@@ -110,7 +113,13 @@ func tearDown(t *testing.T, c *kubernetes.Clientset, namespace string) {
 }
 
 func TestCat(t *testing.T) {
-	c, namespace := setup(t)
-	cleanupOnInterrupt(func() { tearDown(t, c, namespace) })
-	defer tearDown(t, c, namespace)
+	k, c, namespace := setup(t)
+	cleanupOnInterrupt(func() { tearDown(t, k, namespace) })
+	defer tearDown(t, k, namespace)
+
+	cats, err := c.List(metav1.ListOptions{})
+	if err != nil {
+		t.Fatalf("Couldn't list cats: %s", err)
+	}
+	fmt.Println(cats)
 }
