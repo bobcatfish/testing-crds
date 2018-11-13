@@ -105,13 +105,6 @@ func setup(t *testing.T) (*kubernetes.Clientset, client.Client, string) {
 
 	}
 	c := mgr.GetClient()
-	/*
-		cs, err := versioned.NewForConfig(cfg)
-		if err != nil {
-			t.Fatalf("couldn't create cat clientset: %s", err)
-		}
-		c := cs.FelineV1alpha1().Felines(namespace)
-	*/
 
 	return k, c, namespace
 }
