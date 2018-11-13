@@ -1,0 +1,20 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: feline-controller
+  namespace: felinetopia
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: feline-controller
+    spec:
+      serviceAccountName: feline-controller
+      containers:
+      - name: feline-controller
+        image: github.com/bobcatfish/testing-crds/kubebuilder/cmd/manager
+        args: [
+          "-logtostderr",
+          "-stderrthreshold", "INFO",
+        ]

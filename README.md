@@ -50,6 +50,7 @@ After you have [deployed the controller](#deploying), you can run the integratio
 
 ```bash
 go test -v -count=1 -tags=e2e ./client-go/test
+go test -v -count=1 -tags=e2e ./kubebuilder/test
 ```
 
 _`-count=1` is [the idiomatic way to disable test caching](https://golang.org/doc/go1.10#test)._
@@ -175,6 +176,8 @@ make
 # To run a controller process locally
 make run
 
-# To deploy to the kube cluster pointed to by your current context
-make deploy
+# To deploy the controller and types
+# I couldn't figure out how to get kubebulider deploy to work for me so for now I'll use `ko`
+# Bonus that `ko` doesn't require docker to be installed or for me to change anything manually
+ ko apply -f koconfig
 ```

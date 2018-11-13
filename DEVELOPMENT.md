@@ -11,6 +11,9 @@ You must install these tools:
 1. [`ko`](https://github.com/google/go-containerregistry/tree/master/cmd/ko): For
    development.
 1. [`kubectl`](https://kubernetes.io/docs/tasks/tools/install-kubectl/): For interacting with your kube cluster
+1. [`kubebuilder`](https://book.kubebuilder.io/)
+1. [`kustomize`](https://github.com/kubernetes-sigs/kustomize/blob/master/docs/INSTALL.md)
+
 
 ## Update vendoring
 

@@ -3,6 +3,7 @@
 package test
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
@@ -12,16 +13,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bobcatfish/testing-crds/kubebuilder/pkg/apis"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/clientcmd"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	"github.com/bobcatfish/testing-crds/client-go/pkg/apis/cat/v1alpha1"
-	"github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned"
-	typed "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned/typed/cat/v1alpha1"
+	"github.com/bobcatfish/testing-crds/kubebuilder/pkg/apis/cat/v1alpha1"
 
 	// Mysteriously by k8s libs, or they fail to create `KubeClient`s from config. Apparently just importing it is enough. @_@ side effects @_@. https://github.com/kubernetes/client-go/issues/242
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -67,7 +70,7 @@ func cleanupOnInterrupt(cleanup func()) {
 	}()
 }
 
-func setup(t *testing.T) (*kubernetes.Clientset, typed.CatInterface, string) {
+func setup(t *testing.T) (*kubernetes.Clientset, client.Client, string) {
 	overrides := clientcmd.ConfigOverrides{}
 	if flags.Cluster != "" {
 		overrides.Context.Cluster = flags.Cluster
@@ -96,11 +99,19 @@ func setup(t *testing.T) (*kubernetes.Clientset, typed.CatInterface, string) {
 	}
 
 	// Create cat CRD client
-	cs, err := versioned.NewForConfig(cfg)
+	apis.AddToScheme(scheme.Scheme)
+	mgr, err := manager.New(cfg, manager.Options{})
 	if err != nil {
-		t.Fatalf("couldn't create cat clientset: %s", err)
+
 	}
-	c := cs.CatV1alpha1().Cats(namespace)
+	c := mgr.GetClient()
+	/*
+		cs, err := versioned.NewForConfig(cfg)
+		if err != nil {
+			t.Fatalf("couldn't create cat clientset: %s", err)
+		}
+		c := cs.FelineV1alpha1().Felines(namespace)
+	*/
 
 	return k, c, namespace
 }
@@ -120,32 +131,29 @@ func tearDown(t *testing.T, c *kubernetes.Clientset, namespace string) {
 	}
 }
 
-func getCat(name, namespace string) *v1alpha1.Cat {
-	return &v1alpha1.Cat{
+func getFeline(name, namespace string) *v1alpha1.Feline {
+	return &v1alpha1.Feline{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      name,
 		},
-		Spec: v1alpha1.CatSpec{
-			Name:   name,
-			Breed:  v1alpha1.BreedTypeMoggie,
-			Phrase: "meow about that",
-		}}
+		Spec: v1alpha1.FelineSpec{}}
 }
 
-func TestCat(t *testing.T) {
+func TestFeline(t *testing.T) {
 	k, c, namespace := setup(t)
 	cleanupOnInterrupt(func() { tearDown(t, k, namespace) })
 	defer tearDown(t, k, namespace)
 
 	catName := "billie"
-	if _, err := c.Create(getCat(catName, namespace)); err != nil {
+	if err := c.Create(context.Background(), getFeline(catName, namespace)); err != nil {
 		t.Fatalf("Failed to create cat %q: %s", catName, err)
 	}
+	deploymentName := catName + "-deployment"
 
-	log.Printf("Waiting for corresponding Deployment to be created for Cat %q\n", catName)
+	log.Printf("Waiting for corresponding Deployment to be created for Feline %q\n", catName)
 	if err := wait.PollImmediate(interval, timeout, func() (bool, error) {
-		_, err := k.AppsV1().Deployments(namespace).Get(catName, metav1.GetOptions{})
+		_, err := k.AppsV1().Deployments(namespace).Get(deploymentName, metav1.GetOptions{})
 		if err != nil {
 			if errors.IsNotFound(err) {
 				return false, nil
@@ -154,6 +162,6 @@ func TestCat(t *testing.T) {
 		}
 		return true, nil
 	}); err != nil {
-		t.Errorf("Expected deployment %q for cat %q was not created: %s", catName, catName, err)
+		t.Errorf("Expected deployment %q for cat %q was not created: %s", deploymentName, catName, err)
 	}
 }
