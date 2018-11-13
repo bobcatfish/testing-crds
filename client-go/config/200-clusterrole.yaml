@@ -6,3 +6,7 @@ rules:
   - apiGroups: ["cat.bobcatfish.com"]
     resources: ["cats"]
     verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "create", "update", "delete", "patch", "watch"]
+

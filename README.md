@@ -96,6 +96,12 @@ You can remove it with:
 ko delete -f client-go/config/
 ```
 
+You can get controller logs with:
+
+```bash
+kubectl -n cattopia logs $(kubectl -n cattopia get pods -l app=cat-controller -o name)
+```
+
 ##### Running locally
 
 You can run the controllers locally by building it with go and running the binary directly:

@@ -13,15 +13,8 @@ spec:
       serviceAccountName: cat-controller
       containers:
       - name: cat-controller
-        image: github.com/knative/build-pipeline/cmd/factored-controller
+        image: github.com/bobcatfish/testing-crds/client-go/cmd/factored-controller
         args: [
           "-logtostderr",
           "-stderrthreshold", "INFO",
         ]
-        volumeMounts:
-        - name: config-logging
-          mountPath: /etc/config-logging
-      volumes:
-        - name: config-logging
-          configMap:
-            name: config-logging
