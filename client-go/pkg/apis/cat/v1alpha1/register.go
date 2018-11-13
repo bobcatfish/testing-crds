@@ -5,7 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/bobcatfish/testing-crds/pkg/apis/cat"
+	"github.com/bobcatfish/testing-crds/client-go/pkg/apis/cat"
 )
 
 // SchemeGroupVersion is group version used to register these objects

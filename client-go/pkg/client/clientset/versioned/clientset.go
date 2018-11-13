@@ -19,7 +19,7 @@ limitations under the License.
 package versioned
 
 import (
-	catv1alpha1 "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned/typed/cat/v1alpha1"
+	catv1alpha1 "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned/typed/cat/v1alpha1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

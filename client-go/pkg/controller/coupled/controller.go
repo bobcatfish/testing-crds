@@ -22,11 +22,11 @@ import (
 	"k8s.io/client-go/tools/record"
 	"k8s.io/client-go/util/workqueue"
 
-	"github.com/bobcatfish/testing-crds/pkg/apis/cat/v1alpha1"
-	clientset "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned"
-	samplescheme "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned/scheme"
-	informers "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions/cat/v1alpha1"
-	listers "github.com/bobcatfish/testing-crds/pkg/client/listers/cat/v1alpha1"
+	"github.com/bobcatfish/testing-crds/client-go/pkg/apis/cat/v1alpha1"
+	clientset "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned"
+	samplescheme "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned/scheme"
+	informers "github.com/bobcatfish/testing-crds/client-go/pkg/client/informers/externalversions/cat/v1alpha1"
+	listers "github.com/bobcatfish/testing-crds/client-go/pkg/client/listers/cat/v1alpha1"
 )
 
 const controllerAgentName = "cat-controller"

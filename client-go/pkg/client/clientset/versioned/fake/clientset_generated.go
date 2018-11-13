@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned"
-	catv1alpha1 "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned/typed/cat/v1alpha1"
-	fakecatv1alpha1 "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned/typed/cat/v1alpha1/fake"
+	clientset "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned"
+	catv1alpha1 "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned/typed/cat/v1alpha1"
+	fakecatv1alpha1 "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned/typed/cat/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

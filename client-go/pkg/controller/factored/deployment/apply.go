@@ -3,7 +3,7 @@ package deployment
 import (
 	"fmt"
 
-	"github.com/bobcatfish/testing-crds/pkg/apis/cat/v1alpha1"
+	"github.com/bobcatfish/testing-crds/client-go/pkg/apis/cat/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

@@ -9,10 +9,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
-	clientset "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned"
-	informers "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions"
-	"github.com/bobcatfish/testing-crds/pkg/controller/factored"
-	"github.com/bobcatfish/testing-crds/pkg/signals"
+	clientset "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned"
+	informers "github.com/bobcatfish/testing-crds/client-go/pkg/client/informers/externalversions"
+	"github.com/bobcatfish/testing-crds/client-go/pkg/controller/factored"
+	"github.com/bobcatfish/testing-crds/client-go/pkg/signals"
 
 	// Mysteriously by k8s libs, or they fail to create `KubeClient`s from config. Apparently just importing it is enough. @_@ side effects @_@. https://github.com/kubernetes/client-go/issues/242
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"

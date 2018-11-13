@@ -21,10 +21,10 @@ package v1alpha1
 import (
 	time "time"
 
-	catv1alpha1 "github.com/bobcatfish/testing-crds/pkg/apis/cat/v1alpha1"
-	versioned "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/bobcatfish/testing-crds/pkg/client/listers/cat/v1alpha1"
+	catv1alpha1 "github.com/bobcatfish/testing-crds/client-go/pkg/apis/cat/v1alpha1"
+	versioned "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/bobcatfish/testing-crds/client-go/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/bobcatfish/testing-crds/client-go/pkg/client/listers/cat/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

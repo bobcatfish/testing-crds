@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/bobcatfish/testing-crds/pkg/client/clientset/versioned"
-	cat "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions/cat"
-	internalinterfaces "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions/internalinterfaces"
+	versioned "github.com/bobcatfish/testing-crds/client-go/pkg/client/clientset/versioned"
+	cat "github.com/bobcatfish/testing-crds/client-go/pkg/client/informers/externalversions/cat"
+	internalinterfaces "github.com/bobcatfish/testing-crds/client-go/pkg/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

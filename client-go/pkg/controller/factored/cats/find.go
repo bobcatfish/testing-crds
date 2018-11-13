@@ -3,7 +3,7 @@ package cats
 import (
 	"fmt"
 
-	"github.com/bobcatfish/testing-crds/pkg/apis/cat/v1alpha1"
+	"github.com/bobcatfish/testing-crds/client-go/pkg/apis/cat/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 )
 

@@ -19,8 +19,8 @@ limitations under the License.
 package cat
 
 import (
-	v1alpha1 "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions/cat/v1alpha1"
-	internalinterfaces "github.com/bobcatfish/testing-crds/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "github.com/bobcatfish/testing-crds/client-go/pkg/client/informers/externalversions/cat/v1alpha1"
+	internalinterfaces "github.com/bobcatfish/testing-crds/client-go/pkg/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.
