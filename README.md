@@ -49,7 +49,7 @@ After you have [deployed the controller](#deploying), you can run the integratio
 [the `current-context` cluster in your kube config](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/):
 
 ```bash
-go test -v -count=1 -tags=system ./client-go/test
+go test -v -count=1 -tags=e2e ./client-go/test
 ```
 
 _`-count=1` is [the idiomatic way to disable test caching](https://golang.org/doc/go1.10#test)._
@@ -57,7 +57,7 @@ _`-count=1` is [the idiomatic way to disable test caching](https://golang.org/do
 You can override the kubeconfig and context if you'd like:
 
 ```bash
-go test -v -tags=system -count=1 ./client-go/test --kubeconfig ~/special/kubeconfig --cluster myspecialcluster
+go test -v -tags=e2e -count=1 ./client-go/test --kubeconfig ~/special/kubeconfig --cluster myspecialcluster
 ```
 ## Example controllers
 
