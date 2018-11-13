@@ -1,0 +1,15 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: cats.cat.bobcatfish.com
+spec:
+  group: cat.bobcatfish.com
+  names:
+    kind: Cat
+    plural: cats
+    categories:
+    - all
+    - cats
+  scope: Namespaced
+  version: v1alpha1

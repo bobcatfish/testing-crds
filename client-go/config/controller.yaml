@@ -13,7 +13,7 @@ spec:
       serviceAccountName: cat-controller
       containers:
       - name: cat-controller
-        image: github.com/knative/build-pipeline/cmd/coupled-controller
+        image: github.com/knative/build-pipeline/cmd/factored-controller
         args: [
           "-logtostderr",
           "-stderrthreshold", "INFO",

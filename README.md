@@ -49,7 +49,7 @@ After you have [deployed the controller](#deploying), you can run the integratio
 [the `current-context` cluster in your kube config](https://kubernetes.io/docs/concepts/configuration/organize-cluster-access-kubeconfig/):
 
 ```bash
-go test -v -count=1 -tags=system ./test
+go test -v -count=1 -tags=system ./client-go/test
 ```
 
 _`-count=1` is [the idiomatic way to disable test caching](https://golang.org/doc/go1.10#test)._
@@ -57,7 +57,7 @@ _`-count=1` is [the idiomatic way to disable test caching](https://golang.org/do
 You can override the kubeconfig and context if you'd like:
 
 ```bash
-go test -v -tags=system -count=1 ./test --kubeconfig ~/special/kubeconfig --cluster myspecialcluster
+go test -v -tags=system -count=1 ./client-go/test --kubeconfig ~/special/kubeconfig --cluster myspecialcluster
 ```
 ## Example controllers
 
@@ -79,14 +79,14 @@ the CRD is called `Feline` instead.
 
 ##### Deploying
 
-TODO: how to switch b/w the two implementations with `ko`?
-
 The controllers can be built and deployed with [`ko`](https://github.com/google/go-containerregistry/tree/master/cmd/ko),
 which requires the environment variable `KO_DOCKER_REGISTRY` to be set to
 a docker registry you can push to (i.e. one you've logged into using [`docker login`](https://docs.docker.com/engine/reference/commandline/login/)
 or via [`gcloud`](https://cloud.google.com/container-registry/docs/advanced-authentication)):
 
 ```bash
+# This currenly deploys only the well-factored controller.
+# We can't really run both b/c they'll try to reconcile the same objects.
 ko apply -f client-go/config/
 ```
 
