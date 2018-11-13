@@ -102,7 +102,7 @@ func setup(t *testing.T) (*kubernetes.Clientset, client.Client, string) {
 	apis.AddToScheme(scheme.Scheme)
 	mgr, err := manager.New(cfg, manager.Options{})
 	if err != nil {
-
+		t.Fatalf("Failed to instantiate Feline manager: %s", err)
 	}
 	c := mgr.GetClient()
 
